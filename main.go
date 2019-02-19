@@ -9,7 +9,7 @@ import (
 
 func main() {
 	h := handler.New(&handler.Config{
-		Schema:   &testutil.StarWarsSchema,
+		Schema:   &testutil.EmployerSchema,
 		Pretty:   true,
 		GraphiQL: true,
 	})
