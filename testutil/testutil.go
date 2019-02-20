@@ -112,6 +112,9 @@ func init() {
 	queryType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
+			/*
+				http://localhost:8080/product?query={employer(id:106){id,FirstName,LastName,Gender,Position,Salary}}
+			*/
 			"employer": &graphql.Field{
 				Type: EmployerType,
 				Args: graphql.FieldConfigArgument{
@@ -132,6 +135,10 @@ func init() {
 					return nil, nil
 				},
 			},
+			/*
+				http://localhost:8080/product?query={list{id,FirstName,LastName,Gender,Position,Salary}}
+			*/
+
 			"list": &graphql.Field{
 				Type:        graphql.NewList(EmployerType),
 				Description: "Get Emploeyr list",
@@ -145,7 +152,7 @@ func init() {
 		Name: "Mutation",
 		Fields: graphql.Fields{
 			/* Create new employer item
-			http://localhost:8080/?query=mutation+_{create(FirstName:"Inca",LastName:"Kola",Gender:"other",Position:"CEO",Salary:6000){id,FirstName,LastName,Gender, Position, Salary}}
+			http://localhost:8080/?query=mutation+{create(FirstName:"Inca",LastName:"Kola",Gender:"other",Position:"CEO",Salary:6000){id,FirstName,LastName,Gender, Position, Salary}}
 			*/
 			"create": &graphql.Field{
 				Type:        EmployerType,
@@ -182,7 +189,7 @@ func init() {
 			},
 
 			/* Update employer by id
-			   http://localhost:8080/?query=mutation+_{update(id:101,Salaty:9000){id,FirstName,LastName,Gender, Position, Salary}}
+			   http://localhost:8080/?query=mutation{update(id:101,Salary:9000){id,FirstName,LastName,Gender,Position,Salary}}
 			*/
 			"update": &graphql.Field{
 				Type:        EmployerType,
@@ -240,7 +247,7 @@ func init() {
 				},
 			},
 			/* Delete product by id
-			   http://localhost:8080/product?query=mutation+_{delete(id:106){id,FirstName,LastName,Gender, Position, Salary}}
+			   http://localhost:8080/product?query=mutation{delete(id:106){id,FirstName,LastName,Gender,Position,Salary}}
 			*/
 			"delete": &graphql.Field{
 				Type:        EmployerType,
