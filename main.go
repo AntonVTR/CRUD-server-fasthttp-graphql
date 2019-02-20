@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/AntonVTR/probation_test/grapthql_fasthttp/testutil"
+	"github.com/AntonVTR/probation_test/CRUD-server-fasthttp-graphql/testutil"
 	handler "github.com/lab259/graphql-fasthttp-handler"
 	"github.com/valyala/fasthttp"
 )
