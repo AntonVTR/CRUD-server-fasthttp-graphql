@@ -1,15 +1,7 @@
 package testutil
 
 import (
-	"encoding/json"
-	"fmt"
-	"reflect"
-	"testing"
-
 	"github.com/graphql-go/graphql"
-	"github.com/graphql-go/graphql/gqlerrors"
-	"github.com/graphql-go/graphql/language/ast"
-	"github.com/graphql-go/graphql/language/parser"
 )
 
 var (
@@ -21,29 +13,16 @@ var (
 	Rashid    Employer
 	Elizabeth Employer
 
-	//Department map[int]Department
-	//Company    map[int]Company
 	EmployerSchema graphql.Schema
-
-	//Departments *graphql.Object
-	//Companys    *graphql.Object
 )
 
-type Company struct {
-	ID   string `json:"id,omitempty"`
-	Name string `json:"name"`
-}
-type Department struct {
-	ID   string `json:"id,omitempty"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-}
 type Employer struct {
 	ID        int    `json:"id,omitempty"`
 	FirstName string `json:"firstname"`
 	LastName  string `json:"lastname"`
 	Gender    string `json:"gender"`
 	Position  string `json:"position"`
+	Salary    int    `json:"salary"`
 }
 
 func init() {
@@ -53,6 +32,7 @@ func init() {
 		LastName:  "Stone",
 		Gender:    "male",
 		Position:  "Boss",
+		Salary:    4000,
 	}
 	Kate = Employer{
 		ID:        101,
@@ -60,6 +40,7 @@ func init() {
 		LastName:  "Lakritz",
 		Gender:    "female",
 		Position:  "Secreataty",
+		Salary:    2000,
 	}
 	Suzan = Employer{
 		ID:        102,
@@ -67,6 +48,7 @@ func init() {
 		LastName:  "Berke",
 		Gender:    "female",
 		Position:  "Frontend",
+		Salary:    3000,
 	}
 	Jakob = Employer{
 		ID:        103,
@@ -74,6 +56,7 @@ func init() {
 		LastName:  "Baloon",
 		Gender:    "male",
 		Position:  "backend",
+		Salary:    3000,
 	}
 	Fathe = Employer{
 		ID:        104,
@@ -81,6 +64,7 @@ func init() {
 		LastName:  "Snow",
 		Gender:    "male",
 		Position:  "tester",
+		Salary:    3000,
 	}
 	Rashid = Employer{
 		ID:        105,
@@ -88,6 +72,7 @@ func init() {
 		LastName:  "Spark",
 		Gender:    "male",
 		Position:  "tester",
+		Salary:    2000,
 	}
 	Elizabeth = Employer{
 		ID:        106,
@@ -95,6 +80,7 @@ func init() {
 		LastName:  "Scram",
 		Gender:    "female",
 		Position:  "backend",
+		Salary:    3000,
 	}
 	var employers = []Employer{Anderson, Kate, Suzan, Jakob, Fathe, Rashid, Elizabeth}
 
@@ -116,6 +102,9 @@ func init() {
 				},
 				"Position": &graphql.Field{
 					Type: graphql.String,
+				},
+				"Salary": &graphql.Field{
+					Type: graphql.Int,
 				},
 			},
 		},
@@ -143,166 +132,143 @@ func init() {
 					return nil, nil
 				},
 			},
+			"list": &graphql.Field{
+				Type:        graphql.NewList(EmployerType),
+				Description: "Get Emploeyr list",
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					return employers, nil
+				},
+			},
 		},
 	})
+	var mutationType = graphql.NewObject(graphql.ObjectConfig{
+		Name: "Mutation",
+		Fields: graphql.Fields{
+			/* Create new employer item
+			http://localhost:8080/?query=mutation+_{create(FirstName:"Inca",LastName:"Kola",Gender:"other",Position:"CEO",Salary:6000){id,FirstName,LastName,Gender, Position, Salary}}
+			*/
+			"create": &graphql.Field{
+				Type:        EmployerType,
+				Description: "Create new employer",
+				Args: graphql.FieldConfigArgument{
+					"FirstName": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+					"LastName": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+					"Gender": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+					"Position": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+					"Salary": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					employer := Employer{
+						ID:        employers[len(employers)-1].ID + 1,
+						FirstName: params.Args["FirstName"].(string),
+						LastName:  params.Args["LastName"].(string),
+						Gender:    params.Args["Gender"].(string),
+						Position:  params.Args["Position"].(string),
+						Salary:    params.Args["Salary"].(int),
+					}
+					employers = append(employers, employer)
+					return employer, nil
+				},
+			},
+
+			/* Update employer by id
+			   http://localhost:8080/?query=mutation+_{update(id:101,Salaty:9000){id,FirstName,LastName,Gender, Position, Salary}}
+			*/
+			"update": &graphql.Field{
+				Type:        EmployerType,
+				Description: "Update employer by id",
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+					"FirstName": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+					"LastName": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+					"Gender": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+					"Position": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+					"Salary": &graphql.ArgumentConfig{
+						Type: graphql.Int,
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					id, _ := params.Args["id"].(int)
+					firstName, firstNameOk := params.Args["FirstName"].(string)
+					lastName, lastNameOk := params.Args["LastName"].(string)
+					gender, genderOk := params.Args["Gender"].(string)
+					position, positionOk := params.Args["Position"].(string)
+					salary, salaryOk := params.Args["Salary"].(int)
+					employer := Employer{}
+					for i, p := range employers {
+						if int(id) == p.ID {
+							if firstNameOk {
+								employers[i].FirstName = firstName
+							}
+							if lastNameOk {
+								employers[i].LastName = lastName
+							}
+							if genderOk {
+								employers[i].Gender = gender
+							}
+							if positionOk {
+								employers[i].Position = position
+							}
+							if salaryOk {
+								employers[i].Salary = salary
+							}
+							employer = employers[i]
+							break
+						}
+					}
+					return employer, nil
+				},
+			},
+			/* Delete product by id
+			   http://localhost:8080/product?query=mutation+_{delete(id:106){id,FirstName,LastName,Gender, Position, Salary}}
+			*/
+			"delete": &graphql.Field{
+				Type:        EmployerType,
+				Description: "Employer by id",
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					id, _ := params.Args["id"].(int)
+					employer := Employer{}
+					for i, p := range employers {
+						if int(id) == p.ID {
+							employer = employers[i]
+							// Remove from employer list
+							employers = append(employers[:i], employers[i+1:]...)
+						}
+					}
+
+					return employer, nil
+				},
+			},
+		},
+	})
+
 	EmployerSchema, _ = graphql.NewSchema(graphql.SchemaConfig{
-		Query: queryType,
+		Query:    queryType,
+		Mutation: mutationType,
 	})
-}
-
-// Test helper functions
-
-func TestParse(t *testing.T, query string) *ast.Document {
-	astDoc, err := parser.Parse(parser.ParseParams{
-		Source: query,
-		Options: parser.ParseOptions{
-			// include source, for error reporting
-			NoSource: false,
-		},
-	})
-	if err != nil {
-		t.Fatalf("Parse failed: %v", err)
-	}
-	return astDoc
-}
-func TestExecute(t *testing.T, ep graphql.ExecuteParams) *graphql.Result {
-	return graphql.Execute(ep)
-}
-
-func Diff(want, got interface{}) []string {
-	return []string{fmt.Sprintf("\ngot: %v", got), fmt.Sprintf("\nwant: %v\n", want)}
-}
-
-func ASTToJSON(t *testing.T, a ast.Node) interface{} {
-	b, err := json.Marshal(a)
-	if err != nil {
-		t.Fatalf("Failed to marshal Node %v", err)
-	}
-	var f interface{}
-	err = json.Unmarshal(b, &f)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal Node %v", err)
-	}
-	return f
-}
-
-func ContainSubsetSlice(super []interface{}, sub []interface{}) bool {
-	if len(sub) == 0 {
-		return true
-	}
-subLoop:
-	for _, subVal := range sub {
-		found := false
-	innerLoop:
-		for _, superVal := range super {
-			if subVal, ok := subVal.(map[string]interface{}); ok {
-				if superVal, ok := superVal.(map[string]interface{}); ok {
-					if ContainSubset(superVal, subVal) {
-						found = true
-						break innerLoop
-					} else {
-						continue
-					}
-				} else {
-					return false
-				}
-
-			}
-			if subVal, ok := subVal.([]interface{}); ok {
-				if superVal, ok := superVal.([]interface{}); ok {
-					if ContainSubsetSlice(superVal, subVal) {
-						found = true
-						break innerLoop
-					} else {
-						continue
-					}
-				} else {
-					return false
-				}
-			}
-			if reflect.DeepEqual(superVal, subVal) {
-				found = true
-				break innerLoop
-			}
-		}
-		if !found {
-			return false
-		}
-		continue subLoop
-	}
-	return true
-}
-
-func ContainSubset(super map[string]interface{}, sub map[string]interface{}) bool {
-	if len(sub) == 0 {
-		return true
-	}
-	for subKey, subVal := range sub {
-		if superVal, ok := super[subKey]; ok {
-			switch superVal := superVal.(type) {
-			case []interface{}:
-				if subVal, ok := subVal.([]interface{}); ok {
-					if !ContainSubsetSlice(superVal, subVal) {
-						return false
-					}
-				} else {
-					return false
-				}
-			case map[string]interface{}:
-				if subVal, ok := subVal.(map[string]interface{}); ok {
-					if !ContainSubset(superVal, subVal) {
-						return false
-					}
-				} else {
-					return false
-				}
-			default:
-				if !reflect.DeepEqual(superVal, subVal) {
-					return false
-				}
-			}
-		} else {
-			return false
-		}
-	}
-	return true
-}
-
-func EqualErrorMessage(expected, result *graphql.Result, i int) bool {
-	return expected.Errors[i].Message == result.Errors[i].Message
-}
-
-func EqualFormattedError(exp, act gqlerrors.FormattedError) bool {
-	if exp.Message != act.Message {
-		return false
-	}
-	if !reflect.DeepEqual(exp.Locations, act.Locations) {
-		return false
-	}
-	if !reflect.DeepEqual(exp.Path, act.Path) {
-		return false
-	}
-	if !reflect.DeepEqual(exp.Extensions, act.Extensions) {
-		return false
-	}
-	return true
-}
-
-func EqualFormattedErrors(expected, actual []gqlerrors.FormattedError) bool {
-	if len(expected) != len(actual) {
-		return false
-	}
-	for i := range expected {
-		if !EqualFormattedError(expected[i], actual[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-func EqualResults(expected, result *graphql.Result) bool {
-	if !reflect.DeepEqual(expected.Data, result.Data) {
-		return false
-	}
-	return EqualFormattedErrors(expected.Errors, result.Errors)
 }
